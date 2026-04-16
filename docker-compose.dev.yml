@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # NestJS API (для разработки с hot-reload)
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: life-os-api-dev
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=file:./dev.db
+      - JWT_SECRET=your-secret-key-change-in-production
+      - JWT_EXPIRES_IN=7d
+      - PORT=3001
+      - FRONTEND_URL=http://localhost:3000
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/api/node_modules
+    networks:
+      - life-os-network
+    command: npm run start:dev
+
+  # Next.js Web App (для разработки с hot-reload)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    container_name: life-os-web-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_NOTIFICATIONS_URL=http://localhost:3002
+    volumes:
+      - ./apps/web:/app/apps/web
+      - /app/node_modules
+      - /app/apps/web/node_modules
+      - /app/apps/web/.next
+    depends_on:
+      - api
+    networks:
+      - life-os-network
+    command: npm run dev
+
+  # Go Notifications Service
+  notifications:
+    build:
+      context: ./services/notifications-service
+      dockerfile: Dockerfile
+    container_name: life-os-notifications-dev
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./services/notifications-service:/app
+      - notifications-data:/root
+    networks:
+      - life-os-network
+
+volumes:
+  notifications-data:
+
+networks:
+  life-os-network:
+    driver: bridge

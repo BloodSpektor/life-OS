@@ -8,28 +8,68 @@
 - 💧 **Трекинг воды** - отслеживание потребления жидкости
 - 🍽️ **Учет питания** - калории, БЖУ, рецепты
 - 💪 **Тренировки** - журнал физической активности
+- 🔔 **Уведомления** - напоминания о приеме пищи, воды, тренировках
 
 ## Технологический стек
 
 - **Frontend**: Next.js 14 (App Router), React, TypeScript, TailwindCSS
-- **Backend**: NestJS, TypeScript
+- **Backend API**: NestJS, TypeScript
+- **Notifications Service**: Go, Gin, SQLite
 - **Database**: SQLite (для MVP), Prisma ORM
 - **Monorepo**: npm workspaces
+- **Containerization**: Docker, Docker Compose
 
 ## Структура проекта
 
 ```
 life-os/
 ├── apps/
-│   ├── web/          # Next.js frontend
-│   └── api/          # NestJS backend
+│   ├── web/          # Next.js frontend (порт 3000)
+│   └── api/          # NestJS backend (порт 3001)
 ├── packages/
 │   ├── shared/       # Общие типы и утилиты
 │   └── database/     # Prisma схемы
-└── services/         # Будущие Go микросервисы
+└── services/
+    └── notifications-service/  # Go микросервис (порт 3002)
 ```
 
-## Установка
+## Быстрый старт с Docker 🐳
+
+### Запуск всех сервисов
+
+**Windows (PowerShell):**
+```powershell
+.\docker.ps1 up
+```
+
+**Linux/Mac:**
+```bash
+make up
+# или
+docker-compose up -d
+```
+
+### Доступ к приложению
+
+- **Web**: http://localhost:3000
+- **API**: http://localhost:3001
+- **Notifications**: http://localhost:3002
+
+### Остановка сервисов
+
+**Windows:**
+```powershell
+.\docker.ps1 down
+```
+
+**Linux/Mac:**
+```bash
+make down
+```
+
+Подробнее см. [DOCKER.md](./DOCKER.md)
+
+## Установка (локальная разработка)
 
 ```bash
 # Установить зависимости
@@ -77,14 +117,16 @@ npm run build:web
 
 ### Фаза 1 (MVP) ✅
 - Базовая структура проекта
-- Онлайн холодильник
+- Онлайн холодильник с изоляцией данных по пользователям
 - Трекинг воды
 - Учет питания
 - Журнал тренировок
+- Микросервис уведомлений (Go)
+- Docker контейнеризация
 
 ### Фаза 2
 - Аутентификация пользователей
-- Уведомления
+- Расширенные уведомления
 - Интеграция с внешними API рецептов
 - Расширенная аналитика
 
