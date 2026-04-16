@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* Overlay scrollbar - не занимает место */
+  html {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+  }
+  
+  /* Стилизация scrollbar для webkit браузеров */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #15803d;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #166534;
+  }
+  
+  /* Анимации для табов */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-in-out forwards;
+  }
+  
+  .animate-fade-out {
+    animation: fade-out 0.5s ease-in-out forwards;
+  }
+}

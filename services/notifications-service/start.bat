@@ -1,0 +1,3 @@
+@echo off
+echo Starting Notifications Service...
+notifications-service.exe

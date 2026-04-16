@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  phone     String?  @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  foodItems      FoodItem[]
+  meals          Meal[]
+  mealPlans      MealPlan[]
+  hydrationLogs  HydrationLog[]
+  workouts       Workout[]
+  notifications  Notification[]
+  refrigerators  Refrigerator[]
+}
+
+model FoodItem {
+  id             String    @id @default(uuid())
+  userId         String
+  refrigeratorId String?
+  name           String
+  quantity       Float
+  unit           String
+  expiryDate     DateTime?
+  addedDate      DateTime  @default(now())
+  category       String?
+  calories       Float?
+  protein        Float?
+  carbs          Float?
+  fats           Float?
+  
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refrigerator   Refrigerator? @relation(fields: [refrigeratorId], references: [id], onDelete: SetNull)
+  mealItems      MealItem[]
+  
+  @@index([userId])
+  @@index([refrigeratorId])
+}
+
+model Meal {
+  id          String     @id @default(uuid())
+  userId      String
+  name        String?
+  mealType    String     // breakfast, lunch, dinner, snack
+  date        DateTime   @default(now())
+  totalCalories Float?
+  totalProtein  Float?
+  totalCarbs    Float?
+  totalFats     Float?
+  
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       MealItem[]
+  
+  @@index([userId, date])
+}
+
+model MealItem {
+  id          String   @id @default(uuid())
+  mealId      String
+  foodItemId  String?
+  customName  String?
+  quantity    Float
+  unit        String
+  calories    Float?
+  protein     Float?
+  carbs       Float?
+  fats        Float?
+  
+  meal        Meal      @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodItem    FoodItem? @relation(fields: [foodItemId], references: [id], onDelete: SetNull)
+  
+  @@index([mealId])
+}
+
+model HydrationLog {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Float    // in ml
+  date      DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, date])
+}
+
+model Workout {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  type        String   // cardio, strength, flexibility, etc
+  duration    Int      // in minutes
+  caloriesBurned Float?
+  notes       String?
+  date        DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, date])
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // meal, medication, water, workout, sleep
+  title       String
+  message     String?
+  scheduledTime DateTime
+  isRecurring Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, scheduledTime])
+}
+
+model MealPlan {
+  id              String   @id @default(uuid())
+  userId          String
+  name            String
+  scheduledTime   String   // HH:MM format
+  plannedCalories Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+model Refrigerator {
+  id          String     @id @default(uuid())
+  userId      String
+  name        String     // название холодильника (например, "Основной", "Морозилка")
+  location    String?    // местоположение (например, "Кухня", "Гараж")
+  temperature Float?     // температура в градусах Цельсия
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodItems   FoodItem[]
+  
+  @@index([userId])
+}
