@@ -297,6 +297,7 @@ export default function FridgePage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => openEditModal(item)}
+                          className="hover:bg-blue-50 hover:text-blue-600 transition-colors"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -304,6 +305,7 @@ export default function FridgePage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDeleteItem(item.id)}
+                          className="hover:bg-red-50 hover:text-red-600 transition-colors"
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
