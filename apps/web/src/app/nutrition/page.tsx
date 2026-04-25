@@ -10,6 +10,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip } from "
 import { api } from "@/lib/api";
 import { useNutritionStore, Meal, MealItem } from "@/lib/nutrition-store";
 import { MealModal } from "@/components/MealModal";
+import { AddMealModal } from "@/components/AddMealModal";
 import { SelectProductsModal, SelectedProduct } from "@/components/SelectProductsModal";
 
 const COLORS = {
@@ -21,6 +22,7 @@ const COLORS = {
 export default function NutritionPage() {
     const store = useNutritionStore();
     const [isMealModalOpen, setIsMealModalOpen] = useState(false);
+    const [isAddMealModalOpen, setIsAddMealModalOpen] = useState(false);
     const [isProductsModalOpen, setIsProductsModalOpen] = useState(false);
     const [editingMeal, setEditingMeal] = useState<Meal | undefined>(undefined);
     const [selectedMealForProducts, setSelectedMealForProducts] = useState<Meal | undefined>(undefined);
@@ -182,8 +184,7 @@ export default function NutritionPage() {
     };
 
     const openCreateModal = () => {
-        setEditingMeal(undefined);
-        setIsMealModalOpen(true);
+        setIsAddMealModalOpen(true);
     };
 
     const changeDate = (days: number) => {
@@ -436,6 +437,8 @@ export default function NutritionPage() {
                         : undefined
                 }
             />
+
+            <AddMealModal open={isAddMealModalOpen} onOpenChange={setIsAddMealModalOpen} onCompleted={fetchMeals} selectedDate={store.selectedDate} />
 
             <SelectProductsModal
                 open={isProductsModalOpen}
