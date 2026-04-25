@@ -11,32 +11,52 @@ datasource db {
 }
 
 model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  phone         String?        @unique
+  password      String
+  name          String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  foodItems     FoodItem[]
+  mealPlans     MealPlan[]
+  mealLogs      MealLog[]
+  refrigerators Refrigerator[]
+}
+
+model Refrigerator {
   id        String     @id @default(uuid())
-  email     String     @unique
-  phone     String?    @unique
-  password  String
-  name      String?
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  isActive  Boolean    @default(true)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   foodItems FoodItem[]
-  mealPlans MealPlan[]
+
+  @@index([userId])
 }
 
 model FoodItem {
-  id           String    @id @default(uuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String
-  category     String
-  quantity     Float
-  unit         String
-  calories     Float?
-  expiryDate   DateTime?
-  purchaseDate DateTime?
-  location     String?
-  notes        String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refrigeratorId String?
+  refrigerator   Refrigerator? @relation(fields: [refrigeratorId], references: [id], onDelete: SetNull)
+  name           String
+  category       String
+  quantity       Float
+  unit           String
+  calories       Float?
+  protein        Float?
+  carbs          Float?
+  fats           Float?
+  expiryDate     DateTime?
+  purchaseDate   DateTime?
+  location       String?
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([userId])
 }
@@ -52,4 +72,23 @@ model MealPlan {
   updatedAt       DateTime @updatedAt
 
   @@index([userId])
+}
+
+model MealLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  time      String
+  date      DateTime @default(now())
+  items     String
+  calories  Float    @default(0)
+  protein   Float    @default(0)
+  carbs     Float    @default(0)
+  fats      Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([date])
 }

@@ -46,5 +46,11 @@ Thumbs.db
 *.db-journal
 prisma/migrations/
 
+# Go Binaries
+*.exe
+*.out
+go.sum
+go.mod
+
 # Misc
 .turbo

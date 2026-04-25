@@ -1,130 +1,156 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateFoodItemDto } from './dto/create-food-item.dto';
-import { UpdateFoodItemDto } from './dto/update-food-item.dto';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
+import { CreateFoodItemDto } from "./dto/create-food-item.dto";
+import { UpdateFoodItemDto } from "./dto/update-food-item.dto";
+import { ConsumeFoodItemDto } from "./dto/consume-food-item.dto";
+import { PrismaService } from "../../../prisma/prisma.service";
 
 @Injectable()
 export class InventoryService {
-  constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, createFoodItemDto: CreateFoodItemDto) {
-    // Получаем или создаем холодильник по умолчанию для пользователя
-    let refrigerator = await this.prisma.refrigerator.findFirst({
-      where: { userId, isActive: true },
-    });
+    async create(userId: string, createFoodItemDto: CreateFoodItemDto) {
+        // Получаем или создаем холодильник по умолчанию для пользователя
+        let refrigerator = await this.prisma.refrigerator.findFirst({
+            where: { userId, isActive: true },
+        });
 
-    if (!refrigerator) {
-      refrigerator = await this.prisma.refrigerator.create({
-        data: {
-          userId,
-          name: 'Мой холодильник',
-          isActive: true,
-        },
-      });
+        if (!refrigerator) {
+            refrigerator = await this.prisma.refrigerator.create({
+                data: {
+                    userId,
+                    name: "Мой холодильник",
+                    isActive: true,
+                },
+            });
+        }
+
+        return this.prisma.foodItem.create({
+            data: {
+                userId,
+                refrigeratorId: refrigerator.id,
+                name: createFoodItemDto.name,
+                category: createFoodItemDto.category,
+                quantity: createFoodItemDto.quantity,
+                unit: createFoodItemDto.unit,
+                expiryDate: createFoodItemDto.expiryDate ? new Date(createFoodItemDto.expiryDate) : null,
+                calories: createFoodItemDto.calories,
+                protein: createFoodItemDto.protein,
+                carbs: createFoodItemDto.carbs,
+                fats: createFoodItemDto.fats,
+            },
+            include: {
+                refrigerator: true,
+            },
+        });
     }
 
-    return this.prisma.foodItem.create({
-      data: {
-        userId,
-        refrigeratorId: refrigerator.id,
-        name: createFoodItemDto.name,
-        category: createFoodItemDto.category,
-        quantity: createFoodItemDto.quantity,
-        unit: createFoodItemDto.unit,
-        expiryDate: createFoodItemDto.expiryDate ? new Date(createFoodItemDto.expiryDate) : null,
-        calories: createFoodItemDto.calories,
-        protein: createFoodItemDto.protein,
-        carbs: createFoodItemDto.carbs,
-        fats: createFoodItemDto.fats,
-      },
-      include: {
-        refrigerator: true,
-      },
-    });
-  }
-
-  async findAll(userId: string) {
-    return this.prisma.foodItem.findMany({
-      where: { userId },
-      include: {
-        refrigerator: true,
-      },
-      orderBy: [
-        { category: 'asc' },
-        { expiryDate: 'asc' },
-      ],
-    });
-  }
-
-  async findOne(id: string, userId: string) {
-    const foodItem = await this.prisma.foodItem.findFirst({
-      where: { id, userId },
-      include: {
-        refrigerator: true,
-      },
-    });
-
-    if (!foodItem) {
-      throw new NotFoundException('Продукт не найден');
+    async findAll(userId: string) {
+        return this.prisma.foodItem.findMany({
+            where: { userId },
+            include: {
+                refrigerator: true,
+            },
+            orderBy: [{ category: "asc" }, { expiryDate: "asc" }],
+        });
     }
 
-    return foodItem;
-  }
+    async findOne(id: string, userId: string) {
+        const foodItem = await this.prisma.foodItem.findFirst({
+            where: { id, userId },
+            include: {
+                refrigerator: true,
+            },
+        });
 
-  async update(id: string, userId: string, updateFoodItemDto: UpdateFoodItemDto) {
-    await this.findOne(id, userId);
+        if (!foodItem) {
+            throw new NotFoundException("Продукт не найден");
+        }
 
-    const updateData: any = { ...updateFoodItemDto };
-    
-    if (updateFoodItemDto.expiryDate) {
-      updateData.expiryDate = new Date(updateFoodItemDto.expiryDate);
+        return foodItem;
     }
 
-    return this.prisma.foodItem.update({
-      where: { id },
-      data: updateData,
-      include: {
-        refrigerator: true,
-      },
-    });
-  }
+    async update(id: string, userId: string, updateFoodItemDto: UpdateFoodItemDto) {
+        await this.findOne(id, userId);
 
-  async remove(id: string, userId: string) {
-    await this.findOne(id, userId);
+        const updateData: any = { ...updateFoodItemDto };
 
-    return this.prisma.foodItem.delete({
-      where: { id },
-    });
-  }
+        if (updateFoodItemDto.expiryDate) {
+            updateData.expiryDate = new Date(updateFoodItemDto.expiryDate);
+        }
 
-  async getCategories(userId: string) {
-    const items = await this.prisma.foodItem.findMany({
-      where: { userId },
-      select: { category: true },
-      distinct: ['category'],
-    });
+        return this.prisma.foodItem.update({
+            where: { id },
+            data: updateData,
+            include: {
+                refrigerator: true,
+            },
+        });
+    }
 
-    return items.map(item => item.category).filter(Boolean);
-  }
+    async remove(id: string, userId: string) {
+        await this.findOne(id, userId);
 
-  async getStats(userId: string) {
-    const items = await this.prisma.foodItem.findMany({
-      where: { userId },
-    });
+        return this.prisma.foodItem.delete({
+            where: { id },
+        });
+    }
 
-    const now = new Date();
-    const expiringItems = items.filter(item => {
-      if (!item.expiryDate) return false;
-      const daysUntilExpiry = Math.ceil((item.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      return daysUntilExpiry <= 5 && daysUntilExpiry >= 0;
-    });
+    async getCategories(userId: string) {
+        const items = await this.prisma.foodItem.findMany({
+            where: { userId },
+            select: { category: true },
+            distinct: ["category"],
+        });
 
-    const totalCalories = items.reduce((sum, item) => sum + (item.calories || 0), 0);
+        return items.map((item) => item.category).filter(Boolean);
+    }
 
-    return {
-      totalItems: items.length,
-      expiringItems: expiringItems.length,
-      totalCalories,
-    };
-  }
+    async getStats(userId: string) {
+        const items = await this.prisma.foodItem.findMany({
+            where: { userId },
+        });
+
+        const now = new Date();
+        const expiringItems = items.filter((item) => {
+            if (!item.expiryDate) return false;
+            const daysUntilExpiry = Math.ceil((item.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            return daysUntilExpiry <= 5 && daysUntilExpiry >= 0;
+        });
+
+        const totalCalories = items.reduce((sum, item) => sum + (item.calories || 0), 0);
+
+        return {
+            totalItems: items.length,
+            expiringItems: expiringItems.length,
+            totalCalories,
+        };
+    }
+
+    async consume(id: string, userId: string, consumeFoodItemDto: ConsumeFoodItemDto) {
+        const foodItem = await this.findOne(id, userId);
+
+        if (foodItem.unit !== consumeFoodItemDto.unit) {
+            throw new BadRequestException("Unit mismatch");
+        }
+
+        const newQuantity = foodItem.quantity - consumeFoodItemDto.amount;
+
+        if (newQuantity < 0) {
+            throw new BadRequestException("Insufficient quantity");
+        }
+
+        if (newQuantity === 0) {
+            await this.prisma.foodItem.delete({
+                where: { id },
+            });
+            return { deleted: true, remainingQuantity: 0 };
+        }
+
+        const updated = await this.prisma.foodItem.update({
+            where: { id },
+            data: { quantity: newQuantity },
+        });
+
+        return { deleted: false, remainingQuantity: updated.quantity };
+    }
 }
