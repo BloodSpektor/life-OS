@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,13 +47,7 @@ export default function FridgePage() {
         };
     };
 
-    useEffect(() => {
-        fetchItems();
-        fetchCategories();
-        fetchStats();
-    }, []);
-
-    const fetchItems = async () => {
+    const fetchItems = useCallback(async () => {
         try {
             const response = await fetch("http://localhost:3001/api/inventory", {
                 headers: getAuthHeaders(),
@@ -65,9 +59,9 @@ export default function FridgePage() {
         } catch (error) {
             console.error("Error fetching items:", error);
         }
-    };
+    }, []);
 
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         try {
             const response = await fetch("http://localhost:3001/api/inventory/categories", {
                 headers: getAuthHeaders(),
@@ -79,9 +73,9 @@ export default function FridgePage() {
         } catch (error) {
             console.error("Error fetching categories:", error);
         }
-    };
+    }, []);
 
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             const response = await fetch("http://localhost:3001/api/inventory/stats", {
                 headers: getAuthHeaders(),
@@ -93,7 +87,13 @@ export default function FridgePage() {
         } catch (error) {
             console.error("Error fetching stats:", error);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchItems();
+        fetchCategories();
+        fetchStats();
+    }, [fetchItems, fetchCategories, fetchStats]);
 
     const handleCreateItem = async (data: {
         name: string;
