@@ -17,6 +17,9 @@ interface FoodItem {
     expiryDate: string | null;
     category: string;
     calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
 }
 
 interface Stats {
@@ -115,9 +118,14 @@ export default function FridgePage() {
                 await fetchCategories();
                 await fetchStats();
                 setIsModalOpen(false);
+            } else {
+                const errorText = await response.text();
+                console.error("Create item failed:", response.status, errorText);
+                alert(`Ошибка создания: ${response.status} ${errorText}`);
             }
         } catch (error) {
             console.error("Error creating item:", error);
+            alert("Не удалось создать продукт. Проверьте соединение с API.");
         }
     };
 
@@ -137,7 +145,7 @@ export default function FridgePage() {
         try {
             const response = await fetch(`http://localhost:3001/api/inventory/${editingItem.id}`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(data),
             });
 
@@ -147,9 +155,14 @@ export default function FridgePage() {
                 await fetchStats();
                 setIsModalOpen(false);
                 setEditingItem(undefined);
+            } else {
+                const errorText = await response.text();
+                console.error("Update item failed:", response.status, errorText);
+                alert(`Ошибка обновления: ${response.status}`);
             }
         } catch (error) {
             console.error("Error updating item:", error);
+            alert("Не удалось обновить продукт.");
         }
     };
 
@@ -157,15 +170,21 @@ export default function FridgePage() {
         try {
             const response = await fetch(`http://localhost:3001/api/inventory/${id}`, {
                 method: "DELETE",
+                headers: getAuthHeaders(),
             });
 
             if (response.ok) {
                 await fetchItems();
                 await fetchCategories();
                 await fetchStats();
+            } else {
+                const errorText = await response.text();
+                console.error("Delete item failed:", response.status, errorText);
+                alert(`Ошибка удаления: ${response.status}`);
             }
         } catch (error) {
             console.error("Error deleting item:", error);
+            alert("Не удалось удалить продукт.");
         }
     };
 
@@ -281,6 +300,9 @@ export default function FridgePage() {
                                                         </span>
                                                     )}
                                                     <span>{item.calories} ккал</span>
+                                                    <span>Б:{item.protein ?? 0}г</span>
+                                                    <span>У:{item.carbs ?? 0}г</span>
+                                                    <span>Ж:{item.fats ?? 0}г</span>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
@@ -354,9 +376,9 @@ export default function FridgePage() {
                               unit: editingItem.unit,
                               expiryDate: editingItem.expiryDate || undefined,
                               calories: editingItem.calories,
-                              protein: (editingItem as any).protein,
-                              carbs: (editingItem as any).carbs,
-                              fats: (editingItem as any).fats,
+                              protein: editingItem.protein,
+                              carbs: editingItem.carbs,
+                              fats: editingItem.fats,
                           }
                         : undefined
                 }
