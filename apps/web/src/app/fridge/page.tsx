@@ -106,6 +106,9 @@ export default function FridgePage() {
         carbs: number;
         fats: number;
     }) => {
+        console.log("Creating item with data:", data);
+        console.log("Auth headers:", getAuthHeaders());
+
         try {
             const response = await fetch("http://localhost:3001/api/inventory", {
                 method: "POST",
@@ -113,7 +116,12 @@ export default function FridgePage() {
                 body: JSON.stringify(data),
             });
 
+            console.log("Response status:", response.status);
+            console.log("Response ok:", response.ok);
+
             if (response.ok) {
+                const result = await response.json();
+                console.log("Created item:", result);
                 await fetchItems();
                 await fetchCategories();
                 await fetchStats();
