@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Trash2, Calendar, AlertCircle, Pencil, ShoppingBasket } from "lucide-react";
 import { FoodItemModal } from "@/components/FoodItemModal";
 import { AddToMealModal } from "@/components/AddToMealModal";
+import { inventoryApi } from "@/lib/api";
 
 interface FoodItem {
     id: string;
@@ -37,6 +38,20 @@ export default function FridgePage() {
     const [editingItem, setEditingItem] = useState<FoodItem | undefined>(undefined);
     const [addToMealItem, setAddToMealItem] = useState<FoodItem | undefined>(undefined);
     const [isAddToMealOpen, setIsAddToMealOpen] = useState(false);
+    const [netError, setNetError] = useState<string | null>(null);
+
+    const retryAll = async () => {
+        setNetError(null);
+        try {
+            await fetchItems();
+        } catch {}
+        try {
+            await fetchCategories();
+        } catch {}
+        try {
+            await fetchStats();
+        } catch {}
+    };
 
     // Функция для получения заголовков с токеном
     const getAuthHeaders = () => {
@@ -49,43 +64,52 @@ export default function FridgePage() {
 
     const fetchItems = useCallback(async () => {
         try {
-            const response = await fetch("http://localhost:3001/api/inventory", {
-                headers: getAuthHeaders(),
-            });
+            const response = await inventoryApi.get("/api/inventory");
             if (response.ok) {
                 const data = await response.json();
                 setItems(data);
             }
         } catch (error) {
             console.error("Error fetching items:", error);
+            if (error instanceof Error && error.message.includes("No auth token")) {
+                setNetError("Пожалуйста войдите в систему. Token не найден.");
+            } else {
+                setNetError("Не удалось загрузить список продуктов. Проверьте соединение с API.");
+            }
         }
     }, []);
 
     const fetchCategories = useCallback(async () => {
         try {
-            const response = await fetch("http://localhost:3001/api/inventory/categories", {
-                headers: getAuthHeaders(),
-            });
+            const response = await inventoryApi.get("/api/inventory/categories");
             if (response.ok) {
                 const data = await response.json();
                 setCategories(data);
             }
         } catch (error) {
             console.error("Error fetching categories:", error);
+            if (error instanceof Error && error.message.includes("No auth token")) {
+                setNetError("Пожалуйста войдите в систему. Token не найден.");
+            } else {
+                setNetError("Не удалось загрузить категории. Проверьте подключение.");
+            }
         }
     }, []);
 
     const fetchStats = useCallback(async () => {
         try {
-            const response = await fetch("http://localhost:3001/api/inventory/stats", {
-                headers: getAuthHeaders(),
-            });
+            const response = await inventoryApi.get("/api/inventory/stats");
             if (response.ok) {
                 const data = await response.json();
                 setStats(data);
             }
         } catch (error) {
             console.error("Error fetching stats:", error);
+            if (error instanceof Error && error.message.includes("No auth token")) {
+                setNetError("Пожалуйста войдите в систему. Token не найден.");
+            } else {
+                setNetError("Не удалось загрузить статистику. Проверьте соединение.");
+            }
         }
     }, []);
 
@@ -110,11 +134,7 @@ export default function FridgePage() {
         console.log("Auth headers:", getAuthHeaders());
 
         try {
-            const response = await fetch("http://localhost:3001/api/inventory", {
-                method: "POST",
-                headers: getAuthHeaders(),
-                body: JSON.stringify(data),
-            });
+            const response = await inventoryApi.post("/api/inventory", data);
 
             console.log("Response status:", response.status);
             console.log("Response ok:", response.ok);
@@ -151,11 +171,7 @@ export default function FridgePage() {
         if (!editingItem) return;
 
         try {
-            const response = await fetch(`http://localhost:3001/api/inventory/${editingItem.id}`, {
-                method: "PATCH",
-                headers: getAuthHeaders(),
-                body: JSON.stringify(data),
-            });
+            const response = await inventoryApi.patch(`/api/inventory/${editingItem.id}`, data);
 
             if (response.ok) {
                 await fetchItems();
@@ -176,10 +192,7 @@ export default function FridgePage() {
 
     const handleDeleteItem = async (id: string) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/inventory/${id}`, {
-                method: "DELETE",
-                headers: getAuthHeaders(),
-            });
+            const response = await inventoryApi.delete(`/api/inventory/${id}`);
 
             if (response.ok) {
                 await fetchItems();
@@ -253,6 +266,12 @@ export default function FridgePage() {
             </div>
 
             {/* Stats */}
+            {netError && (
+                <div className="p-4 mb-4 rounded bg-red-100 border border-red-400 text-red-700" role="alert">
+                    Ошибка соединения с API. Повторите попытку.
+                    <button className="ml-4 px-3 py-1 bg-red-500 text-white rounded" onClick={retryAll}>Повторить</button>
+                </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
                     <CardContent className="pt-6">

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { toBaseQuantity, fromBaseToOriginal } from "@/lib/units";
-import { api } from "@/lib/api";
+import { inventoryApi, notifyApi } from "@/lib/api";
 
 interface Item {
     id: string;
@@ -44,7 +44,7 @@ export function AddToMealModal({ open, onOpenChange, item, onCompleted }: AddToM
     const fetchMeals = async () => {
         const today = new Date().toISOString().split("T")[0];
         try {
-            const resp = await api.get(`meal-logs?date=${today}`);
+            const resp = await notifyApi.get(`meal-logs?date=${today}`);
             if (resp.ok) {
                 const data = await resp.json();
                 setMeals(data.map((m: any) => ({ id: m.id, name: m.name, time: m.time })));
@@ -63,7 +63,7 @@ export function AddToMealModal({ open, onOpenChange, item, onCompleted }: AddToM
         }
         // Consume from fridge
         try {
-            const res = await api.post(`inventory/${item.id}/consume`, { amount: qty, unit });
+            const res = await inventoryApi.post(`/api/inventory/${item.id}/consume`, { amount: qty, unit });
             if (!res.ok) {
                 const error = await res.json().catch(() => ({}));
                 setErr(error?.message ?? "Не удалось списать продукт");
@@ -75,12 +75,12 @@ export function AddToMealModal({ open, onOpenChange, item, onCompleted }: AddToM
                 const meal = meals.find((m) => m.id === selectedMeal);
                 if (meal) {
                     // fetch existing meal
-                    const mResp = await api.get(`meal-logs/${meal.id}`);
+                    const mResp = await notifyApi.get(`meal-logs/${meal.id}`);
                     if (mResp.ok) {
                         const mData = await mResp.json();
                         const items = Array.isArray(mData.items) ? mData.items.slice() : [];
                         items.push(`${item.name} - ${qty}${unit}`);
-                        await api.patch(`meal-logs/${meal.id}`, { items });
+                        await notifyApi.patch(`meal-logs/${meal.id}`, { items });
                     }
                 }
             } else {
@@ -94,13 +94,14 @@ export function AddToMealModal({ open, onOpenChange, item, onCompleted }: AddToM
                     carbs: 0,
                     fats: 0,
                 };
-                await api.post("meal-logs", newMeal);
+                await notifyApi.post("meal-logs", newMeal);
             }
 
             onOpenChange(false);
             onCompleted?.();
         } catch (e) {
             console.error("Error adding to meal", e);
+            setErr("Не удалось выполнить операцию. Проверьте соединение с API.");
         }
     };
 

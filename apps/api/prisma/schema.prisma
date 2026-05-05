@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -19,20 +16,26 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   foodItems     FoodItem[]
-  mealPlans     MealPlan[]
+  meals         Meal[]
   mealLogs      MealLog[]
+  mealPlans     MealPlan[]
   refrigerators Refrigerator[]
+  hydrationLogs HydrationLog[]
+  workouts      Workout[]
+  notifications Notification[]
 }
 
 model Refrigerator {
-  id        String     @id @default(uuid())
-  userId    String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  isActive  Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  foodItems FoodItem[]
+  id          String     @id @default(uuid())
+  userId      String
+  name        String
+  location    String?
+  temperature Float?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  foodItems   FoodItem[]
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -40,55 +43,123 @@ model Refrigerator {
 model FoodItem {
   id             String        @id @default(uuid())
   userId         String
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   refrigeratorId String?
-  refrigerator   Refrigerator? @relation(fields: [refrigeratorId], references: [id], onDelete: SetNull)
   name           String
-  category       String
   quantity       Float
   unit           String
+  expiryDate     DateTime?
+  addedDate      DateTime      @default(now())
+  category       String?
   calories       Float?
   protein        Float?
   carbs          Float?
   fats           Float?
-  expiryDate     DateTime?
-  purchaseDate   DateTime?
-  location       String?
-  notes          String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  refrigerator   Refrigerator? @relation(fields: [refrigeratorId], references: [id], onDelete: SetNull)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealItems      MealItem[]
 
   @@index([userId])
+  @@index([refrigeratorId])
 }
 
 model MealPlan {
   id              String   @id @default(uuid())
   userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name            String
   scheduledTime   String
   plannedCalories Int
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model MealLog {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  time      String
-  date      DateTime @default(now())
-  items     String
-  calories  Float    @default(0)
-  protein   Float    @default(0)
-  carbs     Float    @default(0)
-  fats      Float    @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id       String   @id @default(uuid())
+  userId   String
+  name     String
+  time     String
+  date     DateTime @default(now())
+  items    String
+  calories Float
+  protein  Float?
+  carbs    Float?
+  fats     Float?
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([date])
+}
+
+model HydrationLog {
+  id     String   @id @default(uuid())
+  userId String
+  amount Float
+  date   DateTime @default(now())
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+model Meal {
+  id            String     @id @default(uuid())
+  userId        String
+  name          String?
+  mealType      String
+  date          DateTime   @default(now())
+  totalCalories Float?
+  totalProtein  Float?
+  totalCarbs    Float?
+  totalFats     Float?
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealItems     MealItem[]
+
+  @@index([userId, date])
+}
+
+model MealItem {
+  id         String    @id @default(uuid())
+  mealId     String
+  foodItemId String?
+  customName String?
+  quantity   Float
+  unit       String
+  calories   Float?
+  protein    Float?
+  carbs      Float?
+  fats       Float?
+  foodItem   FoodItem? @relation(fields: [foodItemId], references: [id], onDelete: SetNull)
+  meal       Meal      @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  @@index([mealId])
+}
+
+model Notification {
+  id            String   @id @default(uuid())
+  userId        String
+  type          String
+  title         String
+  message       String?
+  scheduledTime DateTime
+  isRecurring   Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, scheduledTime])
+}
+
+model Workout {
+  id             String   @id @default(uuid())
+  userId         String
+  name           String
+  type           String
+  duration       Int
+  caloriesBurned Float?
+  notes          String?
+  date           DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
 }

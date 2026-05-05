@@ -3,31 +3,25 @@ import { Progress } from "../components/ui/progress";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import {
-  Flame,
-  TrendingUp,
-  Apple,
-  Droplets,
-  Moon,
-  Activity,
-  Camera,
-  Plus,
+  Flame, TrendingUp, Apple, Droplets, Moon, Activity, Camera, Plus,
 } from "lucide-react";
+import { useFoodContext } from "../store/foodContext";
 
 export function Home() {
-  // Mock data
+  const { meals } = useFoodContext();
+
   const dailyStats = {
-    calories: { consumed: 1650, target: 2000 },
+    calories: { consumed: Math.round(meals.reduce((sum, m) => sum + m.totals.calories, 0)), target: 2000 },
     water: { consumed: 6, target: 8 },
     sleep: { hours: 7.5, target: 8 },
     steps: { count: 8450, target: 10000 },
   };
 
-  const recentMeals = [
-    { name: "Завтрак", time: "08:30", calories: 420 },
-    { name: "Перекус", time: "11:00", calories: 150 },
-    { name: "Обед", time: "13:30", calories: 680 },
-    { name: "Ужин", time: "19:00", calories: 400 },
-  ];
+  const recentMeals = meals.map((meal) => ({
+    name: meal.name,
+    time: meal.id === "breakfast" ? "08:30" : meal.id === "lunch" ? "13:30" : meal.id === "dinner" ? "19:00" : "11:00",
+    calories: Math.round(meal.totals.calories),
+  }));
 
   const upcomingReminders = [
     { type: "meal", text: "Прием пищи", time: "20:00" },
@@ -51,79 +45,26 @@ export function Home() {
 
       {/* Daily Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Calories */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Калории</CardTitle>
-            <Flame className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dailyStats.calories.consumed} / {dailyStats.calories.target}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">ккал</p>
-            <Progress
-              value={(dailyStats.calories.consumed / dailyStats.calories.target) * 100}
-              className="mt-3"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Water */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Вода</CardTitle>
-            <Droplets className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dailyStats.water.consumed} / {dailyStats.water.target}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">стаканов</p>
-            <Progress
-              value={(dailyStats.water.consumed / dailyStats.water.target) * 100}
-              className="mt-3"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Sleep */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Сон</CardTitle>
-            <Moon className="h-4 w-4 text-indigo-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dailyStats.sleep.hours} / {dailyStats.sleep.target}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">часов</p>
-            <Progress
-              value={(dailyStats.sleep.hours / dailyStats.sleep.target) * 100}
-              className="mt-3"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Steps */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Шаги</CardTitle>
-            <Activity className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dailyStats.steps.count.toLocaleString()}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              из {dailyStats.steps.target.toLocaleString()}
-            </p>
-            <Progress
-              value={(dailyStats.steps.count / dailyStats.steps.target) * 100}
-              className="mt-3"
-            />
-          </CardContent>
-        </Card>
+        {[
+          { label: "Калории", icon: Flame, color: "orange", value: dailyStats.calories.consumed, target: dailyStats.calories.target, unit: "ккал" },
+          { label: "Вода", icon: Droplets, color: "blue", value: dailyStats.water.consumed, target: dailyStats.water.target, unit: "стаканов" },
+          { label: "Сон", icon: Moon, color: "indigo", value: dailyStats.sleep.hours, target: dailyStats.sleep.target, unit: "часов" },
+          { label: "Шаги", icon: Activity, color: "green", value: dailyStats.steps.count, target: dailyStats.steps.target, unit: "шагов" },
+        ].map((stat) => (
+          <Card key={stat.label}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
+              <stat.icon className={`h-4 w-4 text-${stat.color}-500`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {stat.value.toLocaleString()} / {stat.target.toLocaleString()}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">{stat.unit}</p>
+              <Progress value={(stat.value / stat.target) * 100} className="mt-3" />
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -183,15 +124,9 @@ export function Home() {
                           : "bg-indigo-100"
                       }`}
                     >
-                      {reminder.type === "meal" && (
-                        <Apple className="h-5 w-5 text-orange-600" />
-                      )}
-                      {reminder.type === "medicine" && (
-                        <Activity className="h-5 w-5 text-blue-600" />
-                      )}
-                      {reminder.type === "sleep" && (
-                        <Moon className="h-5 w-5 text-indigo-600" />
-                      )}
+                      {reminder.type === "meal" && <Apple className="h-5 w-5 text-orange-600" />}
+                      {reminder.type === "medicine" && <Activity className="h-5 w-5 text-blue-600" />}
+                      {reminder.type === "sleep" && <Moon className="h-5 w-5 text-indigo-600" />}
                     </div>
                     <div>
                       <p className="font-medium">{reminder.text}</p>

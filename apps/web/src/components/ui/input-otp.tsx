@@ -1,6 +1,6 @@
 "use client";
 
-import { ComponentProps, ReactNode, forwardRef, ElementRef } from "react";
+import { ComponentProps, ReactNode, forwardRef, ElementRef, useContext } from "react";
 import { OTPInput, OTPInputContext } from "input-otp";
 import { MinusIcon } from "lucide-react";
 
@@ -43,7 +43,7 @@ function InputOTPSlot({
 }: ComponentProps<"div"> & {
   index: number;
 }) {
-  const inputOTPContext = React.useContext(OTPInputContext);
+  const inputOTPContext = useContext(OTPInputContext);
   const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {};
 
   return (

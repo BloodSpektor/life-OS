@@ -4,37 +4,28 @@ import { Button } from "../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Progress } from "../components/ui/progress";
 import { Badge } from "../components/ui/badge";
-import { Plus, Camera, TrendingUp } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
+import { useFoodContext } from "../store/foodContext";
 
 export function Nutrition() {
   const [activeTab, setActiveTab] = useState("today");
+  const [selectedMeal, setSelectedMeal] = useState("breakfast");
+  const { meals, fridgeItems, addToMeal, removeFromMeal, clearMeal } = useFoodContext();
 
-  // Mock data
-  const dailyGoals = {
-    calories: 2000,
-    protein: 150,
-    carbs: 250,
-    fats: 65,
-  };
+  const dailyGoals = { calories: 2000, protein: 150, carbs: 250, fats: 65 };
 
-  const consumed = {
-    calories: 1650,
-    protein: 98,
-    carbs: 185,
-    fats: 52,
-  };
+  const totalConsumed = meals.reduce(
+    (acc, meal) => ({
+      calories: acc.calories + meal.totals.calories,
+      protein: acc.protein + meal.totals.protein,
+      carbs: acc.carbs + meal.totals.carbs,
+      fats: acc.fats + meal.totals.fats,
+    }),
+    { calories: 0, protein: 0, carbs: 0, fats: 0 }
+  );
 
   const weeklyData = [
     { day: "Пн", calories: 1850 },
@@ -43,57 +34,23 @@ export function Nutrition() {
     { day: "Чт", calories: 2050 },
     { day: "Пт", calories: 1780 },
     { day: "Сб", calories: 2200 },
-    { day: "Вс", calories: 1650 },
+    { day: "Вс", calories: totalConsumed.calories || 1650 },
   ];
 
   const macroData = [
-    { name: "Белки", value: consumed.protein, color: "#ef4444" },
-    { name: "Углеводы", value: consumed.carbs, color: "#3b82f6" },
-    { name: "Жиры", value: consumed.fats, color: "#f59e0b" },
+    { name: "Белки", value: totalConsumed.protein, color: "#ef4444" },
+    { name: "Углеводы", value: totalConsumed.carbs, color: "#3b82f6" },
+    { name: "Жиры", value: totalConsumed.fats, color: "#f59e0b" },
   ];
 
-  const meals = [
-    {
-      id: 1,
-      name: "Завтрак",
-      time: "08:30",
-      items: ["Овсянка с фруктами", "Яйца", "Кофе"],
-      calories: 420,
-      protein: 18,
-      carbs: 55,
-      fats: 12,
-    },
-    {
-      id: 2,
-      name: "Перекус",
-      time: "11:00",
-      items: ["Греческий йогурт", "Орехи"],
-      calories: 250,
-      protein: 15,
-      carbs: 20,
-      fats: 12,
-    },
-    {
-      id: 3,
-      name: "Обед",
-      time: "13:30",
-      items: ["Куриная грудка", "Рис", "Овощной салат"],
-      calories: 580,
-      protein: 45,
-      carbs: 60,
-      fats: 15,
-    },
-    {
-      id: 4,
-      name: "Ужин",
-      time: "19:00",
-      items: ["Лосось", "Киноа", "Брокколи"],
-      calories: 400,
-      protein: 20,
-      carbs: 50,
-      fats: 13,
-    },
-  ];
+  const handleAddFromFridge = (mealId: string, foodItem: any) => {
+    const quantity = foodItem.quantity > 100 ? 100 : foodItem.quantity;
+    addToMeal(mealId, foodItem, quantity);
+  };
+
+  const handleClearMeal = (mealId: string) => {
+    clearMeal(mealId);
+  };
 
   return (
     <div className="space-y-6">
@@ -102,16 +59,6 @@ export function Nutrition() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Питание и калории</h1>
           <p className="text-gray-500 mt-1">Отслеживайте свой рацион</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Plus className="mr-2 h-4 w-4" />
-            Добавить еду
-          </Button>
-          <Button className="bg-green-600 hover:bg-green-700">
-            <Camera className="mr-2 h-4 w-4" />
-            Сканировать
-          </Button>
         </div>
       </div>
 
@@ -125,69 +72,25 @@ export function Nutrition() {
         <TabsContent value="today" className="space-y-6">
           {/* Daily Progress */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Калории</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {consumed.calories} / {dailyGoals.calories}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">ккал</p>
-                <Progress
-                  value={(consumed.calories / dailyGoals.calories) * 100}
-                  className="mt-3"
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Белки</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {consumed.protein} / {dailyGoals.protein}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">г</p>
-                <Progress
-                  value={(consumed.protein / dailyGoals.protein) * 100}
-                  className="mt-3"
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Углеводы</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {consumed.carbs} / {dailyGoals.carbs}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">г</p>
-                <Progress
-                  value={(consumed.carbs / dailyGoals.carbs) * 100}
-                  className="mt-3"
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Жиры</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {consumed.fats} / {dailyGoals.fats}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">г</p>
-                <Progress
-                  value={(consumed.fats / dailyGoals.fats) * 100}
-                  className="mt-3"
-                />
-              </CardContent>
-            </Card>
+            {[
+              { label: "Калории", consumed: totalConsumed.calories, goal: dailyGoals.calories, unit: "ккал" },
+              { label: "Белки", consumed: totalConsumed.protein, goal: dailyGoals.protein, unit: "г" },
+              { label: "Углеводы", consumed: totalConsumed.carbs, goal: dailyGoals.carbs, unit: "г" },
+              { label: "Жиры", consumed: totalConsumed.fats, goal: dailyGoals.fats, unit: "г" },
+            ].map((item) => (
+              <Card key={item.label}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">{item.label}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {Math.round(item.consumed)} / {item.goal}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{item.unit}</p>
+                  <Progress value={(item.consumed / item.goal) * 100} className="mt-3" />
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -205,9 +108,7 @@ export function Nutrition() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) =>
-                          `${name} ${(percent * 100).toFixed(0)}%`
-                        }
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
@@ -235,19 +136,44 @@ export function Nutrition() {
                       <div className="flex items-center justify-between mb-2">
                         <div>
                           <h3 className="font-semibold">{meal.name}</h3>
-                          <p className="text-sm text-gray-500">{meal.time}</p>
+                          <Badge className="mt-1">{Math.round(meal.totals.calories)} ккал</Badge>
                         </div>
-                        <Badge>{meal.calories} ккал</Badge>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedMeal(meal.id)}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Добавить
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleClearMeal(meal.id)}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Очистить
+                          </Button>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        {meal.items.map((item, idx) => (
-                          <p key={idx}>• {item}</p>
-                        ))}
-                      </div>
+                      {meal.items.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-sm text-gray-600 py-1">
+                          <span>• {item.name} ({item.quantity} {item.unit})</span>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            onClick={() => removeFromMeal(meal.id, idx)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
                       <div className="flex gap-3 mt-2 text-xs text-gray-500">
-                        <span>Б: {meal.protein}г</span>
-                        <span>У: {meal.carbs}г</span>
-                        <span>Ж: {meal.fats}г</span>
+                        <span>Б: {Math.round(meal.totals.protein)}г</span>
+                        <span>У: {Math.round(meal.totals.carbs)}г</span>
+                        <span>Ж: {Math.round(meal.totals.fats)}г</span>
                       </div>
                     </div>
                   ))}
@@ -255,10 +181,42 @@ export function Nutrition() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Fridge items to add */}
+          {selectedMeal && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Добавить из холодильника в {meals.find(m => m.id === selectedMeal)?.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {fridgeItems.length === 0 && (
+                    <p className="text-gray-500 text-sm">Холодильник пуст</p>
+                  )}
+                  {fridgeItems.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div>
+                        <span className="font-medium">{item.name}</span>
+                        <span className="text-sm text-gray-500 ml-2">
+                          {item.quantity} {item.unit}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAddFromFridge(selectedMeal, item)}
+                        disabled={item.quantity <= 0}
+                      >
+                        Добавить
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="week" className="space-y-6">
-          {/* Weekly Chart */}
           <Card>
             <CardHeader>
               <CardTitle>Калории за неделю</CardTitle>
@@ -278,22 +236,16 @@ export function Nutrition() {
             </CardContent>
           </Card>
 
-          {/* Weekly Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardContent className="pt-6">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                  <div>
-                    <div className="text-2xl font-bold">1936</div>
-                    <p className="text-sm text-gray-500">Средние калории</p>
-                  </div>
-                </div>
+                <div className="text-2xl font-bold">{Math.round(totalConsumed.calories) || 1936}</div>
+                <p className="text-sm text-gray-500">Средние калории</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold">13,550</div>
+                <div className="text-2xl font-bold">{Math.round(totalConsumed.calories * 7) || 13550}</div>
                 <p className="text-sm text-gray-500">Всего калорий</p>
               </CardContent>
             </Card>

@@ -100,9 +100,27 @@ npm run dev:api
 # Запустить только Web
 npm run dev:web
 
+# Запустить Web с очисткой кеша (при проблемах с HMR)
+npm run dev:clean --workspace=apps/web
+
+# Очистить кеш Next.js
+npm run clean --workspace=apps/web
+
 # Prisma Studio
 npm run db:studio
 ```
+
+### Решение проблем
+
+Если возникают ошибки типа "Cannot find module" или пропадает стилизация:
+
+```powershell
+# Быстрое решение
+.\clean-cache.ps1
+npm run dev
+```
+
+Подробнее см. [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 
 ## Сборка
 

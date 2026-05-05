@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Switch } from "../components/ui/switch";
 import { Plus, Bell, Pill, Moon, Dumbbell, Apple, Clock, Trash2 } from "lucide-react";
+import { useFoodContext } from "../store/foodContext";
 
 interface Reminder {
   id: number;
@@ -16,6 +17,7 @@ interface Reminder {
 }
 
 export function Reminders() {
+  const { meals } = useFoodContext();
   const [reminders, setReminders] = useState<Reminder[]>([
     {
       id: 1,
@@ -141,6 +143,17 @@ export function Reminders() {
 
   const categories: Reminder["type"][] = ["meal", "medicine", "water", "workout", "sleep"];
 
+  // Get meal totals for display
+  const mealTotals = meals.reduce(
+    (acc, meal) => ({
+      calories: acc.calories + meal.totals.calories,
+      protein: acc.protein + meal.totals.protein,
+      carbs: acc.carbs + meal.totals.carbs,
+      fats: acc.fats + meal.totals.fats,
+    }),
+    { calories: 0, protein: 0, carbs: 0, fats: 0 }
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -178,15 +191,40 @@ export function Reminders() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">
-              {
-                reminders.filter((r) => r.enabled && r.days.includes("Пн")).length
-              }
+            <div className="flex items-center gap-2">
+              <Apple className="h-5 w-5 text-orange-600" />
+              <div>
+                <div className="text-2xl font-bold">{Math.round(mealTotals.calories)}</div>
+                <p className="text-sm text-gray-500">Калорий сегодня</p>
+              </div>
             </div>
-            <p className="text-sm text-gray-500">Напоминаний сегодня</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Meals Summary from Context */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Приемы пищи сегодня (из контекста)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {meals.map((meal) => (
+              <div key={meal.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <h3 className="font-semibold">{meal.name}</h3>
+                  <div className="flex gap-3 mt-1 text-sm text-gray-500">
+                    <span>Б: {Math.round(meal.totals.protein)}г</span>
+                    <span>У: {Math.round(meal.totals.carbs)}г</span>
+                    <span>Ж: {Math.round(meal.totals.fats)}г</span>
+                  </div>
+                </div>
+                <Badge>{Math.round(meal.totals.calories)} ккал</Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Reminders by Category */}
       {categories.map((category) => {
